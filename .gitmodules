@@ -1,3 +1,0 @@
-[submodule "bart"]
-	path = bart
-	url = ssh://frank@mikbull.eecs.berkeley.edu:1022/srv/recon.git/
