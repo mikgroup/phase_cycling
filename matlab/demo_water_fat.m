@@ -2,8 +2,9 @@
 clc
 clear
 close all
+setPath
 
-%% Set parameters
+%% Set Reconstruction Parameters
 nIter = 500;
 do_plot = true;
 
@@ -32,12 +33,12 @@ PFT_op = p2DFT(mask,[sx, sy, nc, nm, ne]);
 % create water-fat combine operator
 MAG_op = CScombine( TE, FieldStrength, ppm );
 
-% PHASE_op = Identity;
-PHASE_op = Offreson( TE, FieldStrength );
+PHASE_op = Identity;
+% PHASE_op = Offreson( TE, FieldStrength );
 
-MAG_thresh = @(x, lambda) db_wave_thresh( x, lambda );
+MAG_thresh = @(x, lambda) wave_thresh( x, lambda, 'db6' );
 
-PHASE_thresh = @(x, lambda) db_wave_thresh( x, lambda );
+PHASE_thresh = @(x, lambda) wave_thresh( x, lambda, 'db8' );
 
 
 %% Zero-filled recon
@@ -54,12 +55,7 @@ PHASEstep = 1;
 
 
 % Initialize mag and phase
-resid = ESP_op' * (PFT_op' * k);
-off1 = angle( resid(:,:,:,:,end) .* conj( resid(:,:,:,:,end-1) ) );
-off0 = angle(resid(:,:,:,:,1) );
-phase_init = cat(5, off0, off1 );
-
-[mag, phase] = sepMagPhaseRecon( k, phase_init, ESP_op, PFT_op, ...
+[mag, phase] = sepMagPhaseRecon( k, ESP_op, PFT_op, ...
                                 MAG_op, PHASE_op, ...
                                 MAG_thresh, PHASE_thresh,...
                                 MAGlambda, PHASElambda, ...

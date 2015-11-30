@@ -1,9 +1,8 @@
-function im_rec = db_wave_thresh( im, lambda )
+function im_rec = wave_thresh( im, lambda, wname )
 
 [im, r] = randshift(im);
 
 dwtmode('ppd', 0);
-wname = 'db4';
 
 s = size(im);
 
