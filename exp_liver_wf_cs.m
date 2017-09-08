@@ -13,17 +13,18 @@ FOV = size(ksp);
 ksp = ksp/max(vec(abs(ifft2c(ksp))));
 
 
-%%
+%% Subsample
 ax = 2; % sub-sampling factor in x
 ay = 2; % sub-sampling factor in y
 ncalib = 24;
 mask = vdPoisMex(sx, sy, sx, sy, ax, ay, ncalib, 1, 1.3);
 mask = repmat( mask, [1,1,nc, nm, ne]);
-figure, imshow(mask(:, :, 1, :, 1))
+% mask = ones(size(mask));
+figure, imshowf(mask(:, :, 1, :, 1))
 
 y = ksp .* mask;
 
-%% Generate Maps
+%% Generate Maps using ESPIRiT
 
 ksize = [6, 6];
 [maps, weights] = ecalib(y(:, :, :, 1, 1), ncalib, ksize);
@@ -46,7 +47,7 @@ M = Repmat([1, 1, 1, 1, ne, 1]);
 P = Offres(TE, ns);
 
 
-%% Get phase wraps
+%% Get initial solution and phase wraps
 x = S' * (F' * y);
 ncycles = 8;
 [m0, p0, W] = csinit(x, C, M, ncycles);
@@ -75,15 +76,21 @@ figure, imshow3(p)
 
 %% Sharma et al.
 A = calculate_chemical_shift_encoding_matrix(FieldStrength, ppm, TE);
-lambdam = 0.003;
-niter = 10;
+lambdam = 0.01;
+niter = 20;
 ninneriter = 10;
 stepsize = 0.75;
 minwinsize = 16;
+damp = 0.01;
 
 Pm = wave_thresh('db4', 3, lambdam);
 p0 = p0 * 0;
-[m, p] = restricted_subspace_recon(y, F, S, C, M, P, Pm, A, m0, p0, TE, niter, ninneriter, stepsize, minwinsize);
+[m, p] = restricted_subspace_recon(y, F, S, C, M, P, Pm, A, m0, p0, TE, niter, ninneriter, stepsize, minwinsize, damp);
 
+
+%%
 figure, imshow3f(m)
-figure, imshow3f(p)
+sos = sqrt(sum(abs(m).^2, 6));
+immask = sos > max(sos(:)) * 0.1;
+
+figure, imshow3f(p .* immask)

@@ -6,7 +6,7 @@ Itnlim = 8;
 FT = B(A,field_map,TE,wf_est);
 
 residual = reshape(residual,[],NTE);    % prod(Nx,Ny,Nz) x NTE
-residual_demod = residual .* exp(-1i*2*pi*conj(field_map(:))*TE); % prod(Nx,Ny,Nz) x NTE
+residual_demod = residual .* exp(1i*2*pi*conj(field_map(:))*TE); % prod(Nx,Ny,Nz) x NTE
 residual_demod = reshape(residual_demod,Nx,Ny,Nz,NTE); % Nx x Ny x Nz x NTE
 
 param = init;

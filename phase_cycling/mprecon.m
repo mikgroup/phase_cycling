@@ -4,23 +4,18 @@ k = 0;
 K = 10;
 h = 1;
 
-v = VideoWriter('iterations.mp4', 'MPEG-4');
-v.FrameRate = 5
-open(v)
-
 % Start iteration
 for it = 1:niter
     
     % Plot
     if (doplot)
-        fig = figure(32);
+        figure(32);
         subplot(1,2,1),
         imshow3(abs(m))
         titlef(it);
         subplot(1,2,2),
         imshow3(real(p))
         titlef(it);
-        writeVideo(v,getframe(fig));
         drawnow
     end
     
@@ -53,4 +48,3 @@ for it = 1:niter
     end
     
 end
-close(v)
