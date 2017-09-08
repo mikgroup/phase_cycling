@@ -1,0 +1,111 @@
+function res = mtimes(a,b)
+% res = mtimes(FT,x)
+
+Nx = a.dataSize(1);
+Ny = a.dataSize(2);
+Nz = a.dataSize(3);
+NTE = numel(a.TE);
+
+if a.adjoint
+%     bb = reshape(b,[Nx Ny Nz NTE]);
+    bb = reshape(b,[],TE);      % prod(Nx,Ny,Nz) x NTE
+    bb = permute(bb,[2 1]);     % NTE x prod(Nx,Ny,Nz)
+%     %this block implements copy of res (adjoint of [1;1])
+%     res2 = zeros(Nx,Ny,Nz,NTE,2);
+%     res2(:,:,:,:,1) = bb;
+%     res2(:,:,:,:,2) = bb;
+%     %res2 is Nx x Ny x Nz x NTE x 2
+
+    %this block implements conj(exp(field_map)) .* (-j*2*pi*tn) .*
+    %(conj(A*\rho_hat) .* res2(:,:,:,:,:,1))
+    rho_hat = permute(reshape(a.im_res,prod([Nx,Ny,Nz]),[]),[2 1]); % Nspecies x prod(Nx,Ny,Nz)
+    res1 = conj(A*rho_hat) .* bb;        % NTE x prod(Nx,Ny,Nz)
+    
+%     repmat_A = permute(a.A,[3 4 5 2 1]);
+%     repmat_A = repmat(repmat_A,[a.imSize(1),a.imSize(2),a.imSize(3),1,1]);
+%     % a.A is NTE x num_species 
+
+%     for ii = 1:size(repmat_A,5)
+%         tmp = repmat_A(:,:,:,:,ii) .* a.im_res;
+%         tmp2(:,:,:,ii) = sum(tmp,4);
+%     end
+%     res3 = conj(tmp2) .* res2(:,:,:,:,1);
+%     %res3 is Nx x Ny x Nz x NTE
+    
+    res1 = res1 .* ((-1i*2*pi*a.TE(:))*ones(1,prod([Nx,Ny,Nz])));     % NTE x prod(Nx,Ny,Nz)
+    res1 = res1 .* exp(-1i*2*pi*a.TE(:)*ctranspose(a.field_map(:)));  % NTE x prod(Nx,Ny,Nz)
+    res1 = sum(res1,1);                                               % 1 x prod(Nx,Ny,Nz)
+%     for jj = 1:numel(a.TE)
+%         res3(:,:,:,jj) = res3(:,:,:,jj) .* (-1i*2*pi*a.TE(jj)) .* exp(-1i*2*pi*conj(a.field_map)*a.TE(jj));
+%     end
+%     res3 = sum(res3,4);
+%     res(:,:,:,1) = res3;
+    
+    %this block implements ctranspose(A) * (conj(exp(field_map))) .*
+    %res2(:,:,:,:,2)    
+    res2 = exp(-1i*2*pi*a.TE(:)*ctranspose(a.field_map(:))) .* bb;   % NTE x prod(Nx,Ny,Nz)
+    res2 = ctranspose(a.A) * res2;  % Nspecies x prod(Nx,Ny,Nz)
+    
+%     res4 = zeros(Nx,Ny,Nz,NTE);
+%     for jj = 1:NTE
+%         res4(:,:,:,jj) = res2(:,:,:,jj,2) .* exp(-1i*2*pi*conj(a.field_map)*a.TE(jj));
+%     end
+%     %res4 is Nx x Ny x Nz x NTE
+
+    for jj = 1:size(repmat_A,4)
+        tmp = permute(repmat_A,[1 2 3 5 4]);
+        tmp = tmp(:,:,:,:,jj);
+        res5(:,:,:,jj) = sum(conj(tmp).*res4,4);
+    end
+    %res5 is Nx x Ny x Nz x num_species
+    
+    res(:,:,:,2:3) = res5;
+    %res is Nx x Ny x Nz x 3
+    
+else
+    bb = reshape(b,[],3);   % prod(Nx,Ny,Nz) x 3 (3 update terms, NOT TEs)
+        
+    % this block implements exp(field_map) .* (A * \delta\rho)
+    delta_rho = bb(:,2:3);                               % prod(Nx,Ny,Nz) x 2 (delta_water, delta_fat)
+    FM = exp(1i*2*pi*a.TE(:)*transpose(a.field_map(:))); % NTE x prod(Nx,Ny,Nz)
+    res1 = a.A*permute(delta_rho,[2 1]);                 % NTE x prod(Nx,Ny,Nz)
+    res1 = FM .* res1;                                   % NTE x prod(Nx,Ny,Nz)
+    res1 = reshape(permute(res1,[2 1]),Nx,Ny,Nz,NTE);    % Nx x Ny x Nz x NTE
+    
+%     repmat_A = permute(a.A,[3 4 5 2 1]);
+%     repmat_A = repmat(repmat_A,[a.imSize(1),a.imSize(2),a.imSize(3),1,1]);
+%     % a.A is NTE x num_species
+%     
+%     for ii = 1:size(repmat_A,5)
+%         tmp = repmat_A(:,:,:,:,ii) .* bb(:,:,:,2:3);
+%         res1(:,:,:,ii) = sum(tmp,4);
+%     end    
+%     
+%     for ii = 1:size(res1,4)
+%         res1(:,:,:,ii) = res1(:,:,:,ii) .* exp(1i*2*pi*a.field_map*a.TE(ii));
+%     end
+    % res1 is Nx x Ny x Nz x NTE
+
+    % this block implements (exp(field_map)) .* (j*2*pi*tn*\deltafield_map) .* (A * \rho_hat)
+    rho_hat = permute(reshape(a.im_res,prod([Nx,Ny,Nz]),[]),[2 1]); % Nspecies x prod(Nx,Ny,Nz)
+    res2 = a.A*rho_hat;                                             % NTE x prod(Nx,Ny,Nz)
+    res2 = res2 .* exp(1i*2*pi*a.TE(:)*transpose(a.field_map(:)));  % NTE x prod(Nx,Ny,Nz) 
+    tmp = bb(:,1);                                                  % prod(Nx,Ny,Nz) x 1
+    res2 = res2 .* (1i*2*pi*a.TE(:)*transpose(tmp));                % NTE x prod(Nx,Ny,Nz) 
+    res2 = reshape(permute(res2,[2 1]),Nx,Ny,Nz,NTE);               % Nx x Ny x Nz x NTE
+    
+    
+%     for ii = 1:size(repmat_A,5)
+%         tmp = repmat_A(:,:,:,:,ii) .* a.im_res;
+%         tmp2(:,:,:,ii) = sum(tmp,4);
+%     end
+%     res2 = tmp2;
+   
+%     for ii = 1:size(res2,4)
+%         res2(:,:,:,ii) = res2(:,:,:,ii) .* exp(1i*2*pi*a.field_map*a.TE(ii));
+%         res2(:,:,:,ii) = res2(:,:,:,ii) .* (1i*2*pi*a.TE(ii)*bb(:,:,:,1));
+%     end
+    % res2 is Nx x Ny x Nz x NTE
+    
+    res = res1 + res2;  
+end

@@ -1,0 +1,18 @@
+function  res = B(MASK,imSize,phase,mode,A,C,field_map,TE,im_res)
+
+%SDS - September 2009
+
+res.adjoint = 0;
+res.mask = MASK;
+res.imSize = imSize;
+res.dataSize = imSize; %size(mask); %mod by SDS 
+res.ph = phase;
+res.mode = mode;
+res.A = A;
+res.C = C;
+res.FM = field_map; %field_map = field map + 1i*R2 
+res.TE = TE;
+res.im_res = im_res;
+
+res = class(res,'B');
+

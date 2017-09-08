@@ -1,0 +1,30 @@
+% Modified by SDS - August 2009
+% Edits:
+%  - perform Overlap transform for first of stack of 2D images
+%  - perform Wavelet transform for last two of stack of 2D images 
+
+function res = mtimes(a,b)
+
+res = zeros(Nx,Ny,Nz,3);
+support_size = sum(a.basis(1,:) > 0);
+if a.adjoint
+    tmp = b(1:size(a.basis,1),1:size(a.basis,1),1);
+    tmp = transpose(a.basis) * tmp;
+    res(:,:,1) = 1/support_size * transpose(a.basis) * transpose(tmp);
+else
+    tmp = a.basis * b(:,:,1);
+    tmp = 1/support_size * a.basis * transpose(tmp);
+    res(1:size(a.basis,1),1:size(a.basis,1),1) = tmp;
+end
+
+for bb = 1:Nz
+    for aa = 2:3
+     if a.adjoint
+         res(:,:,aa) = midwt(real(b(:,:,aa)),a.h,a.wavScale) + 1i*midwt(imag(b(:,:,aa)),a.h,a.wavScale);
+     else
+         res(:,:,aa) = mdwt(real(b(:,:,aa)),a.h,a.wavScale) + 1i*mdwt(imag(b(:,:,aa)),a.h,a.wavScale);
+     end
+    end
+end
+     
+end

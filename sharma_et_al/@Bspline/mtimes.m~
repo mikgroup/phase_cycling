@@ -1,0 +1,100 @@
+% Modified by SDS - August 2009
+% Edits:
+%  - perform Overlap transform for first of stack of 2D images
+%  - perform Wavelet transform for last two of stack of 2D images 
+
+function res = mtimes(a,b)
+
+if isa(a,'Overlap_Wavelet') == 0
+    error('In  A.*B only A can be FFT operator');
+end
+
+im_size = size(b,1);
+raw_wins = im_size/a.windowSize;
+if (mod(raw_wins,1) == 0)
+    num_wins = 2*raw_wins - 1;
+    shift = repmat(a.windowSize/2, 1, num_wins - 1);
+else
+    wins_low = 2*im_size/(2^ceil(log2(a.windowSize))) - 1;
+    wins_high = 2*im_size/(2^floor(log2(a.windowSize))) - 1;
+    num_wins = round(1/2*(wins_low + wins_high));
+    extent = num_wins * a.windowSize;
+    over = extent - im_size;
+    over_per_win = repmat(floor(over / (num_wins-1)), 1, num_wins-1);
+    over_per_win_rem = rem(over, (num_wins-1));
+    over_per_win(1:over_per_win_rem) = over_per_win(1:over_per_win_rem) + 1;
+    shift = a.windowSize - over_per_win;
+end
+
+% if (num_wins == 1)
+%     overlap = 0;
+% else
+%     overlap = a.windowSize - shift;
+% end
+
+tmp = sprintf('im%d_winsize%d',im_size,a.windowSize);
+load(tmp);
+
+left = 1;
+right = left + a.windowSize - 1;
+top = 1;
+bottom = top + a.windowSize - 1;
+
+res = zeros(im_size,im_size,1);
+for bb = 1:num_wins
+    for cc = 1:num_wins
+%         mask = zeros(im_size);
+%         mask(top:bottom,left:right) = 1;
+%         if (cc < num_wins)
+%             ramp = linspace(0,1,overlap(cc));
+%             ramp_mask = repmat(ramp,a.windowSize,1);
+%             mask(top:bottom,right-overlap(cc)+1:right) = mask(top:bottom,right-overlap(cc)+1:right) .* fliplr(ramp_mask);
+%         end
+%         if (cc > 1)
+%             ramp = linspace(0,1,overlap(cc-1));
+%             ramp_mask = repmat(ramp,a.windowSize,1);
+%             mask(top:bottom,left:left+overlap(cc-1)-1) = mask(top:bottom,left:left+overlap(cc-1)-1) .* ramp_mask;
+%         end
+%         if (bb > 1)
+%             ramp = linspace(0,1,overlap(bb-1));
+%             ramp_mask = repmat(ramp,a.windowSize,1);
+%             mask(top:top+overlap(bb-1)-1,left:right) = mask(top:top+overlap(bb-1)-1,left:right) .* transpose(ramp_mask);
+%         end
+%         if (bb < num_wins)
+%             ramp = linspace(0,1,overlap(bb));
+%             ramp_mask = repmat(ramp,a.windowSize,1);
+%             mask(bottom-overlap(bb)+1:bottom,left:right) = mask(bottom-overlap(bb)+1:bottom,left:right) .* flipud(transpose(ramp_mask));
+%         end
+        
+
+        if a.adjoint
+            res = res + 1/a.windowSize*(b(bb,cc))*(window_mask(:,:,cc,bb).*a.S);
+        else
+            res(bb,cc) = 1/a.windowSize*sum(sum(a.S.*mask.*(b)));
+        end
+        if (cc < num_wins)
+            left = left + shift(cc);
+            right = left + a.windowSize - 1;
+        end
+    end
+    if (bb < num_wins)
+        left = 1;
+        right = left + a.windowSize - 1;
+        top = top + shift(bb);
+        bottom = top + a.windowSize - 1;
+    end
+end
+
+%for T2*
+% res(:,:,1) = res(:,:,1) + 1i*imag(b(:,:,1)); 
+
+% res(:,:,2:3) = b(:,:,2:3);
+% for aa = 2:3
+%     if a.adjoint
+%         res(:,:,aa) = IWT2_PO(real(b(:,:,aa)),a.wavScale,a.qmf) + 1i*IWT2_PO(imag(b(:,:,aa)),a.wavScale,a.qmf);
+%         res(:,:,aa) = a.S .* res(:,:,aa);
+%     else
+%         res(:,:,aa) = a.S .* b(:,:,aa);
+%         res(:,:,aa) = FWT2_PO(real(res(:,:,aa)),a.wavScale,a.qmf) + 1i*FWT2_PO(imag(res(:,:,aa)),a.wavScale,a.qmf);
+%     end
+% end
