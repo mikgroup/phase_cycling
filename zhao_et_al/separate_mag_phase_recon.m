@@ -41,7 +41,6 @@ xi = angle(img_i);
 
 niter = piter1+piter2; % number of total iterations
 C = Cdiffs([Nd(1),Nd(2)], 'mask', mask, 'order', 1);
-% soft = @(t,a) (t - a * sign(t)) .* (abs(t) > a); % soft thresholding function
 
 for iter = 1:niter
     % update xi
@@ -73,17 +72,12 @@ for iter = 1:niter
         % 2nd step initialization by conventional CS
         tmp = img_i + 1/curv * A' * (y - A * img_i);
         img_i = proxg_m(tmp, 1 / curv);
-%         img_i = U * soft(U' * tmp, lamda_m / curv);
     else
         % CS update for magnitude image
         for subiter = 1:nsubiter(2)
             tmp = mi + 1/curv * real(Ax0'*(y-Ax0*mi));
             mi = proxg_m(tmp, 1 / curv);
-%             tmp = U' * mi + 1/curv * real(U'*(Ax0'*(y-Ax0*mi)));
-%             mi = U * soft(tmp, lamda_m / (2 * curv));
-figure(23),
-imshowf(abs(embed(mi,mask)), [])
-drawnow
+            
         end
     end
     
@@ -95,6 +89,15 @@ drawnow
     if mod(iter,10) == 1
         printf('iteration %d/%d', iter, niter)
     end
+    
+    figure(32);
+    subplot(1,2,1),
+    imshow3(abs(embed(mi,mask)))
+    title(sprintf('Iteration: %d', iter));
+    subplot(1,2,2),
+    imshow3(real(embed(xi,mask)))
+    title(sprintf('Iteration: %d', iter));
+    drawnow
 end
 
 xi = embed(xi,mask);

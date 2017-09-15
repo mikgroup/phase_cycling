@@ -54,7 +54,7 @@ p_est = angle(S' * (F' * zpad(crop(y, ncalib, ncalib, nc) .* win, sx, sy, nc)));
 
 figure, imshow3(p_est)
 
-% Incorporate Phase in ESPIRiT linear operator
+% Incorporate phase in ESPIRiT linear operator
 mapsp = maps .* repmat(exp(1j*p_est), [1, 1, nc]);
 Sp = ESPIRiT(mapsp, weights);
 
@@ -62,7 +62,7 @@ Sp = ESPIRiT(mapsp, weights);
 %% Create proximal operators
 
 lambdam = 0.003;
-lambdap = 0.03;
+lambdap = 0.005;
 
 Pm = wave_thresh('db4', 3, lambdam);
 
@@ -87,7 +87,7 @@ figure, imshowf(angle(x_sub) .* (abs(x) > 0.05), [-pi, pi])
 %% Bydder et al. Homodyne
 
 maxiter = 1000;
-doplot = 1;
+doplot = 0;
 dohogwild = 1;
 
 lambdar = 0.003;
@@ -95,8 +95,9 @@ lambdai = 0.003;
 
 Pr = wave_thresh('db4', 3, lambdar);
 Pi = wave_thresh('db4', 3, lambdai);
-
+tic
 x_im = imhomodyne(y, Sp, F, Pm, Pp, maxiter, dohogwild, doplot);
+toc
 x_im = x_im .* sqrt(weights);
 
 figure, imshowf(abs(x_im), [0, 1.0])
@@ -112,11 +113,12 @@ ncycles = 16;
 
 %% Phase regularized reconstruction without phase cycling
 
-niter = 1000;
+niter = 100;
+ninneriter = 10;
 doplot = 1;
 dohogwild = 1;
 
-[mn, pn] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, {}, niter, dohogwild, doplot);
+[mn, pn] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, {}, niter, ninneriter, dohogwild, doplot);
 
 mn = mn .* sqrt(weights);
 
@@ -128,11 +130,12 @@ disp(psnr(abs(x), abs(mn)))
 
 %% Proposed phase regularized reconstruction with phase cycling
 
-niter = 1000;
+niter = 100;
+ninneriter = 10;
 doplot = 1;
 dohogwild = 1;
 
-[m, p] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, W, niter, dohogwild, doplot);
+[m, p] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, W, niter, ninneriter, dohogwild, doplot);
 
 m = m .* sqrt(weights);
 
@@ -143,6 +146,8 @@ figure, imshowf(p .* (abs(x) > 0.05), [-pi, pi])
 disp(psnr(abs(x), abs(m)))
 
 %% Zhao et al. Separate magnitude and phase reconstruction
+% Requires irt from Jeff Fessler.
+% Please run setup.m in the toolbox first.
 
 lambda_m = 0.3; % regularization parameter for magnitude
 lambda_p = 0.3; % regularization parameter for phase (rg2/rg4)

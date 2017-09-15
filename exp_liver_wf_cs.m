@@ -65,11 +65,12 @@ Pp = wave_thresh('db6', 3, lambdap);
 
 %% Proposed phase regularized reconstruction with phase cycling
 
-niter = 1000;
+niter = 100;
+ninneriter = 10;
 doplot = 1;
 dohogwild = 1;
 
-[m, p] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, W, niter, dohogwild, doplot);
+[m, p] = mprecon(y, F, S, C, M, P, Pm, Pp, m0, p0, W, niter, ninneriter, dohogwild, doplot);
 
 figure, imshow3(m)
 figure, imshow3(p)
@@ -77,7 +78,7 @@ figure, imshow3(p)
 %% Sharma et al.
 A = calculate_chemical_shift_encoding_matrix(FieldStrength, ppm, TE);
 lambdam = 0.01;
-niter = 20;
+niter = 100;
 ninneriter = 10;
 stepsize = 0.75;
 minwinsize = 16;
@@ -85,12 +86,12 @@ damp = 0.01;
 
 Pm = wave_thresh('db4', 3, lambdam);
 p0 = p0 * 0;
-[m, p] = restricted_subspace_recon(y, F, S, C, M, P, Pm, A, m0, p0, TE, niter, ninneriter, stepsize, minwinsize, damp);
+[ms, ps] = restricted_subspace_recon(y, F, S, C, M, P, Pm, A, m0, p0, TE, niter, ninneriter, stepsize, minwinsize, damp);
 
 
 %%
-figure, imshow3f(m)
-sos = sqrt(sum(abs(m).^2, 6));
+figure, imshow3f(ms)
+sos = sqrt(sum(abs(ms).^2, 6));
 immask = sos > max(sos(:)) * 0.1;
 
-figure, imshow3f(p .* immask)
+figure, imshow3f(ps .* immask)
