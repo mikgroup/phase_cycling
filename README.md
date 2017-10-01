@@ -1,5 +1,5 @@
 # General Phase Regularized Reconstruction via Phase Cycling
-This software package contains matlab scripts to reproduce results described in the paper:
+This software package contains Matlab scripts to reproduce results described in the paper:
 
     General Phase Regularized Reconstruction using Phase Cycling
     Frank Ong, Joseph Cheng, and Michael Lustig
